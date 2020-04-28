@@ -28,7 +28,7 @@ call_user_func(function () {
         'actions-approve' => 'EXT:blog/Resources/Public/Icons/actions-approve.svg',
         'actions-decline' => 'EXT:blog/Resources/Public/Icons/actions-decline.svg',
         'module-blog' => 'EXT:blog/Resources/Public/Icons/module-blog.svg',
-        'plugin-blog-archive' => 'EXT:blog/Resources/Public/Icons/plugin-blog-archive.svg',
+        'plugin-blog-archive' => 'EXT:blog/Resources/Public/Icons/plugin-blog-archive.png',
         'plugin-blog-authorposts' => 'EXT:blog/Resources/Public/Icons/plugin-blog-authorposts.svg',
         'plugin-blog-authors' => 'EXT:blog/Resources/Public/Icons/plugin-blog-authors.svg',
         'plugin-blog-category' => 'EXT:blog/Resources/Public/Icons/plugin-blog-category.svg',
@@ -45,7 +45,7 @@ call_user_func(function () {
         'record-blog-comment' => 'EXT:blog/Resources/Public/Icons/record-blog-comment.svg',
         'record-blog-page' => 'EXT:blog/Resources/Public/Icons/record-blog-page.svg',
         'record-blog-page-root' => 'EXT:blog/Resources/Public/Icons/record-blog-page-root.svg',
-        'record-blog-post' => 'EXT:blog/Resources/Public/Icons/record-blog-post.svg',
+        'record-blog-post' => 'EXT:blog/Resources/Public/Icons/record-blog-post.png',
         'record-blog-tag' => 'EXT:blog/Resources/Public/Icons/record-blog-tag.svg',
         'record-folder-contains-blog' => 'EXT:blog/Resources/Public/Icons/record-folder-contains-blog.svg',
 
@@ -54,7 +54,7 @@ call_user_func(function () {
     foreach ($icons as $identifier => $path) {
         $iconRegistry->registerIcon(
             $identifier,
-            TYPO3\CMS\Core\Imaging\IconProvider\SvgIconProvider::class,
+            substr($path, -3) === 'svg' ? \TYPO3\CMS\Core\Imaging\IconProvider\SvgIconProvider::class : \TYPO3\CMS\Core\Imaging\IconProvider\BitmapIconProvider::class,
             ['source' => $path]
         );
     }
@@ -192,7 +192,7 @@ call_user_func(function () {
             ],
             [
                 'labels' => 'LLL:EXT:blog/Resources/Private/Language/locallang_mod_blog_posts.xlf',
-                'icon' => 'EXT:blog/Resources/Public/Icons/module-blog-posts.svg',
+                'icon' => 'EXT:blog/Resources/Public/Icons/module-blog-posts.png',
                 'access' => 'user,group',
             ]
         );
