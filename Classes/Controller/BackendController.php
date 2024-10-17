@@ -18,8 +18,8 @@ use T3G\AgencyPack\Blog\Service\CacheService;
 use T3G\AgencyPack\Blog\Service\SetupService;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Http\RedirectResponse;
-use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Page\PageRenderer;
+use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 
 class BackendController extends ActionController
@@ -49,14 +49,13 @@ class BackendController extends ActionController
 
     public function initializeAction(): void
     {
-        $this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/Tooltip');
         $this->pageRenderer->addCssFile('EXT:blog/Resources/Public/Css/backend.min.css', 'stylesheet', 'all', '', false);
     }
 
     public function initializeSetupWizardAction(): void
     {
         $this->initializeDataTables();
-        $this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Blog/SetupWizard');
+        $this->pageRenderer->loadJavaScriptModule('@t3g/blog/setup-wizard.js');
     }
 
     public function initializePostsAction(): void
@@ -67,24 +66,23 @@ class BackendController extends ActionController
     public function initializeCommentsAction(): void
     {
         $this->initializeDataTables();
-        $this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Blog/MassUpdate');
+        $this->pageRenderer->loadJavaScriptModule('@t3g/blog/mass-update.js');
     }
 
     protected function initializeDataTables(): void
     {
-        $this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Blog/Datatables');
-        $this->pageRenderer->addCssFile('EXT:blog/Resources/Public/Css/Datatables.min.css', 'stylesheet', 'all', '', false);
+        $this->pageRenderer->loadJavaScriptModule('@t3g/blog/datatables.js');
+        $this->pageRenderer->addCssFile('EXT:blog/Resources/Public/Css/datatables.min.css', 'stylesheet', 'all', '', false);
     }
 
     public function setupWizardAction(): ResponseInterface
     {
-        $this->view->assignMultiple([
+        $view = $this->moduleTemplateFactory->create($this->request);
+        $view->assignMultiple([
             'blogSetups' => $this->setupService->determineBlogSetups(),
         ]);
-        $moduleTemplate = $this->moduleTemplateFactory->create($this->request);
-        $moduleTemplate->setContent($this->view->render());
 
-        return $this->htmlResponse($moduleTemplate->renderContent());
+        return $view->renderResponse('Backend/SetupWizard');
     }
 
     public function postsAction(int $blogSetup = null): ResponseInterface
@@ -94,20 +92,20 @@ class BackendController extends ActionController
         $querySettings->setIgnoreEnableFields(true);
         $this->postRepository->setDefaultQuerySettings($querySettings);
 
-        $this->view->assignMultiple([
+        $view = $this->moduleTemplateFactory->create($this->request);
+        $view->assignMultiple([
             'blogSetups' => $this->setupService->determineBlogSetups(),
             'activeBlogSetup' => $blogSetup,
             'posts' => $this->postRepository->findAllByPid($blogSetup),
         ]);
-        $moduleTemplate = $this->moduleTemplateFactory->create($this->request);
-        $moduleTemplate->setContent($this->view->render());
 
-        return $this->htmlResponse($moduleTemplate->renderContent());
+        return $view->renderResponse('Backend/Posts');
     }
 
     public function commentsAction(string $filter = null, int $blogSetup = null): ResponseInterface
     {
-        $this->view->assignMultiple([
+        $view = $this->moduleTemplateFactory->create($this->request);
+        $view->assignMultiple([
             'activeFilter' => $filter,
             'activeBlogSetup' => $blogSetup,
             'commentCounts' => [
@@ -120,10 +118,8 @@ class BackendController extends ActionController
             'blogSetups' => $this->setupService->determineBlogSetups(),
             'comments' => $this->commentRepository->findAllByFilter($filter, $blogSetup),
         ]);
-        $moduleTemplate = $this->moduleTemplateFactory->create($this->request);
-        $moduleTemplate->setContent($this->view->render());
 
-        return $this->htmlResponse($moduleTemplate->renderContent());
+        return $view->renderResponse('Backend/Comments');
     }
 
     public function updateCommentStatusAction(string $status, string $filter = null, int $blogSetup = null, array $comments = [], int $comment = null): ResponseInterface
@@ -164,7 +160,7 @@ class BackendController extends ActionController
         if ($data !== null && $this->setupService->createBlogSetup($data)) {
             $this->addFlashMessage('Your blog setup has been created.', 'Congratulation');
         } else {
-            $this->addFlashMessage('Sorry, your blog setup could not be created.', 'An error occurred', FlashMessage::ERROR);
+            $this->addFlashMessage('Sorry, your blog setup could not be created.', 'An error occurred', ContextualFeedbackSeverity::ERROR);
         }
 
         return new RedirectResponse($this->uriBuilder->reset()->uriFor('setupWizard'));

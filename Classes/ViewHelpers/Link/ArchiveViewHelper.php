@@ -10,9 +10,9 @@ declare(strict_types = 1);
 
 namespace T3G\AgencyPack\Blog\ViewHelpers\Link;
 
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder;
-use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 use TYPO3Fluid\Fluid\Core\ViewHelper\AbstractTagBasedViewHelper;
 
 class ArchiveViewHelper extends AbstractTagBasedViewHelper
@@ -26,9 +26,6 @@ class ArchiveViewHelper extends AbstractTagBasedViewHelper
     public function initializeArguments(): void
     {
         parent::initializeArguments();
-        $this->registerUniversalTagAttributes();
-        $this->registerTagAttribute('target', 'string', 'Target of link');
-        $this->registerTagAttribute('rel', 'string', 'Specifies the relationship between the current document and the linked document');
 
         $this->registerArgument('month', 'int', 'The month to link to');
         $this->registerArgument('year', 'int', 'The year to link to', true);
@@ -40,7 +37,21 @@ class ArchiveViewHelper extends AbstractTagBasedViewHelper
         $rssFormat = (bool)$this->arguments['rss'];
         $year = (int)$this->arguments['year'];
         $month = (int)$this->arguments['month'];
-        $pageUid = (int)$this->getTypoScriptFrontendController()->tmpl->setup['plugin.']['tx_blog.']['settings.']['archiveUid'];
+        // @todo migrate to site settings
+        $pageUid = (int)($this->getRequest()->getAttribute('frontend.typoscript')->getSetupTree()
+            ->getChildByName('plugin')
+            ?->getChildByName('tx_blog')
+            ?->getChildByName('settings')
+            ?->getChildByName('archiveUid')
+            ?->getValue() ?? 0);
+
+        $rssTypeNum = (int)(
+            $this->getRequest()->getAttribute('frontend.typoscript')->getSetupTree()
+            ->getChildByName('blog_rss_archive')
+            ?->getChildByName('typeNum')
+            ?->getValue() ?? 0
+        );
+
         $arguments = [
             'year' => $year
         ];
@@ -53,13 +64,13 @@ class ArchiveViewHelper extends AbstractTagBasedViewHelper
             ->setTargetPageUid($pageUid);
         if ($rssFormat) {
             $uriBuilder
-                ->setTargetPageType((int)$this->getTypoScriptFrontendController()->tmpl->setup['blog_rss_archive.']['typeNum']);
+                ->setTargetPageType($rssTypeNum);
         }
         $uri = $uriBuilder->uriFor('listPostsByDate', $arguments, 'Post', 'Blog', 'Archive');
         $linkText = $this->renderChildren() ?? implode('-', $arguments);
         if ($uri !== '') {
             $this->tag->addAttribute('href', $uri);
-            $this->tag->setContent($linkText);
+            $this->tag->setContent((string)$linkText);
             $result = $this->tag->render();
         } else {
             $result = $linkText;
@@ -68,8 +79,19 @@ class ArchiveViewHelper extends AbstractTagBasedViewHelper
         return (string)$result;
     }
 
-    protected function getTypoScriptFrontendController(): TypoScriptFrontendController
+    protected function getRequest(): ServerRequestInterface
     {
-        return $GLOBALS['TSFE'];
+        $request = null;
+        if ($this->renderingContext->hasAttribute(ServerRequestInterface::class)) {
+            $request = $this->renderingContext->getAttribute(ServerRequestInterface::class);
+        }
+        $request ??= $GLOBALS['TYPO3_REQUEST'] ?? null;
+        if (!$request instanceof ServerRequestInterface) {
+            throw new \RuntimeException(
+                'ViewHelper blogvh:link.archive needs a request implementing ServerRequestInterface.',
+                1729082933
+            );
+        }
+        return $request;
     }
 }

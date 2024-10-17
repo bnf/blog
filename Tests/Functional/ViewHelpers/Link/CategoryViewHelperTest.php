@@ -11,16 +11,20 @@ declare(strict_types=1);
 
 namespace T3G\AgencyPack\Blog\Tests\Functional\ViewHelpers\Link;
 
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use T3G\AgencyPack\Blog\Constants;
 use T3G\AgencyPack\Blog\Tests\Functional\SiteBasedTestCase;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 
 final class CategoryViewHelperTest extends SiteBasedTestCase
 {
-    /**
-     * @test
-     * @dataProvider renderDataProvider
-     */
+    protected array $coreExtensionsToLoad = [
+        'form'
+    ];
+
+    #[Test]
+    #[DataProvider('renderDataProvider')]
     public function render(string $template, string $expected): void
     {
         $this->createTestSite();

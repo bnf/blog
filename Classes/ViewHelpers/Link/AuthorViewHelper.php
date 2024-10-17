@@ -10,10 +10,10 @@ declare(strict_types = 1);
 
 namespace T3G\AgencyPack\Blog\ViewHelpers\Link;
 
+use Psr\Http\Message\ServerRequestInterface;
 use T3G\AgencyPack\Blog\Domain\Model\Author;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder;
-use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 use TYPO3Fluid\Fluid\Core\ViewHelper\AbstractTagBasedViewHelper;
 
 class AuthorViewHelper extends AbstractTagBasedViewHelper
@@ -27,9 +27,6 @@ class AuthorViewHelper extends AbstractTagBasedViewHelper
     public function initializeArguments(): void
     {
         parent::initializeArguments();
-        $this->registerUniversalTagAttributes();
-        $this->registerTagAttribute('target', 'string', 'Target of link');
-        $this->registerTagAttribute('rel', 'string', 'Specifies the relationship between the current document and the linked document');
 
         $this->registerArgument('author', Author::class, 'The author to link to', true);
         $this->registerArgument('rss', 'bool', 'Link to rss version', false, false);
@@ -56,7 +53,13 @@ class AuthorViewHelper extends AbstractTagBasedViewHelper
 
     protected function buildUriFromDefaultPage(Author $author, bool $rssFormat): string
     {
-        $uriBuilder = $this->getUriBuilder((int)$this->getTypoScriptFrontendController()->tmpl->setup['plugin.']['tx_blog.']['settings.']['authorUid'], [], $rssFormat);
+        $settings = $this->getRequest()->getAttribute('frontend.typoscript')->getSetupTree()
+            ->getChildByName('plugin')
+            ?->getChildByName('tx_blog')
+            ?->getChildByName('settings')
+            ?->toArray() ?? [];
+        $authorUid = (int)($settings['authorUid'] ?? 0);
+        $uriBuilder = $this->getUriBuilder($authorUid, [], $rssFormat);
         $arguments = [
             'author' => $author->getUid(),
         ];
@@ -71,8 +74,14 @@ class AuthorViewHelper extends AbstractTagBasedViewHelper
             ->setTargetPageUid($pageUid)
             ->setArguments($additionalParams);
         if ($rssFormat) {
+            $rssTypeNum = (int)(
+                $this->getRequest()->getAttribute('frontend.typoscript')->getSetupTree()
+                ->getChildByName('blog_rss_author')
+                ?->getChildByName('typeNum')
+                ?->getValue() ?? 0
+            );
             $uriBuilder
-                ->setTargetPageType((int)$this->getTypoScriptFrontendController()->tmpl->setup['blog_rss_author.']['typeNum']);
+                ->setTargetPageType($rssTypeNum);
         }
 
         return $uriBuilder;
@@ -90,8 +99,19 @@ class AuthorViewHelper extends AbstractTagBasedViewHelper
         return $this->renderChildren();
     }
 
-    protected function getTypoScriptFrontendController(): TypoScriptFrontendController
+    protected function getRequest(): ServerRequestInterface
     {
-        return $GLOBALS['TSFE'];
+        $request = null;
+        if ($this->renderingContext->hasAttribute(ServerRequestInterface::class)) {
+            $request = $this->renderingContext->getAttribute(ServerRequestInterface::class);
+        }
+        $request ??= $GLOBALS['TYPO3_REQUEST'] ?? null;
+        if (!$request instanceof ServerRequestInterface) {
+            throw new \RuntimeException(
+                'ViewHelper blogvh:link.author needs a request implementing ServerRequestInterface.',
+                1729082934
+            );
+        }
+        return $request;
     }
 }

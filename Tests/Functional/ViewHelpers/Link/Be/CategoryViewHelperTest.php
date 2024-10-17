@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace T3G\AgencyPack\Blog\Tests\Functional\ViewHelpers\Link\Be;
 
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use T3G\AgencyPack\Blog\Domain\Model\Category;
 use TYPO3\CMS\Core\Core\SystemEnvironmentBuilder;
 use TYPO3\CMS\Core\Http\NormalizedParams;
@@ -23,6 +25,10 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 final class CategoryViewHelperTest extends FunctionalTestCase
 {
+    protected array $coreExtensionsToLoad = [
+        'form'
+    ];
+
     protected array $testExtensionsToLoad = [
         'typo3conf/ext/blog'
     ];
@@ -35,10 +41,8 @@ final class CategoryViewHelperTest extends FunctionalTestCase
             ->withAttribute('normalizedParams', new NormalizedParams([], [], '', ''));
     }
 
-    /**
-     * @test
-     * @dataProvider renderDataProvider
-     */
+    #[Test]
+    #[DataProvider('renderDataProvider')]
     public function render(string $template, string $expected): void
     {
         $category = new Category();

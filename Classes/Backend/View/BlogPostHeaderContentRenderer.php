@@ -42,7 +42,7 @@ class BlogPostHeaderContentRenderer implements SingletonInterface
             return '';
         }
 
-        $pageUid = (int)($request->getParsedBody()['id'] ?? $request->getQueryParams()['id'] ?? 0);
+        $pageUid = (int)($request->getQueryParams()['id'] ?? 0);
         $pageInfo = BackendUtility::readPageAccess($pageUid, $GLOBALS['BE_USER']->getPagePermsClause(Permission::PAGE_SHOW));
         if (($pageInfo['doktype'] ?? 0) !== Constants::DOKTYPE_BLOG_POST) {
             return '';
@@ -58,7 +58,8 @@ class BlogPostHeaderContentRenderer implements SingletonInterface
         $post = $this->postRepository->findByUidRespectQuerySettings($pageUid);
 
         $view = GeneralUtility::makeInstance(StandaloneView::class);
-        $view->getRenderingContext()->getTemplatePaths()->fillDefaultsByPackageName('blog');
+        //$view->getRenderingContext()->getTemplatePaths()->fillDefaultsByPackageName('blog');
+        $view->getRenderingContext()->getTemplatePaths()->setTemplateRootPaths(['EXT:blog/Resources/Private/Templates']);
         $view->setTemplate('PageLayout/Header');
         $view->assignMultiple([
             'pageUid' => $pageUid,

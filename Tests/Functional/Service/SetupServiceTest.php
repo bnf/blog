@@ -11,15 +11,20 @@ declare(strict_types=1);
 
 namespace T3G\AgencyPack\Blog\Tests\Functional\Service;
 
+use PHPUnit\Framework\Attributes\Test;
 use T3G\AgencyPack\Blog\Constants;
 use T3G\AgencyPack\Blog\Service\SetupService;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Core\Core\Bootstrap;
+use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 final class SetupServiceTest extends FunctionalTestCase
 {
+    protected array $coreExtensionsToLoad = [
+        'form'
+    ];
+
     protected array $testExtensionsToLoad = [
         'typo3conf/ext/blog'
     ];
@@ -29,13 +34,11 @@ final class SetupServiceTest extends FunctionalTestCase
         parent::setUp();
 
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/DataHandler/be_users.csv');
-        $this->setUpBackendUser(1);
-        Bootstrap::initializeLanguageObject();
+        $backendUser = $this->setUpBackendUser(1);
+        $GLOBALS['LANG'] = $this->get(LanguageServiceFactory::class)->createFromUserPreferences($backendUser);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function create(): void
     {
         $setupService = GeneralUtility::makeInstance(SetupService::class);
@@ -48,9 +51,7 @@ final class SetupServiceTest extends FunctionalTestCase
         self::assertEquals($rootPage['is_siteroot'], 1);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function createWithName(): void
     {
         $setupService = GeneralUtility::makeInstance(SetupService::class);
@@ -63,9 +64,7 @@ final class SetupServiceTest extends FunctionalTestCase
         self::assertEquals($rootPage['is_siteroot'], 1);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function determineBlogSetups(): void
     {
         $setupService = GeneralUtility::makeInstance(SetupService::class);
