@@ -256,7 +256,7 @@ class PostController extends ActionController
      */
     public function sidebarAction(): ResponseInterface
     {
-        return $this->htmlResponse();
+        return $this->htmlResponse('');
     }
 
     /**
@@ -267,7 +267,7 @@ class PostController extends ActionController
         $post = $this->postRepository->findCurrentPost();
         $this->view->assign('post', $post);
         if ($post instanceof Post) {
-            $this->blogCacheService->addTagsForPost($post);
+            $this->blogCacheService->addTagsForPost($this->request, $post);
         }
         return $this->htmlResponse();
     }
@@ -280,7 +280,7 @@ class PostController extends ActionController
         $post = $this->postRepository->findCurrentPost();
         $this->view->assign('post', $post);
         if ($post instanceof Post) {
-            $this->blogCacheService->addTagsForPost($post);
+            $this->blogCacheService->addTagsForPost($this->request, $post);
         }
         return $this->htmlResponse();
     }
@@ -293,7 +293,7 @@ class PostController extends ActionController
         $post = $this->postRepository->findCurrentPost();
         $this->view->assign('post', $post);
         if ($post instanceof Post) {
-            $this->blogCacheService->addTagsForPost($post);
+            $this->blogCacheService->addTagsForPost($this->request, $post);
         }
         return $this->htmlResponse();
     }
